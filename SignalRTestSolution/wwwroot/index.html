@@ -2,15 +2,31 @@
 <html>
 <head>
     <meta charset="utf-8" />
-    <title>Metanit.com</title>
+    <title>SignalR Test Solution</title>
 </head>
 <body>
+    <div id="loginBlock">
+        <p>
+            Enter login:<br />
+            <input id="email" type="text" />
+        </p>
+        <p>
+            Enter password:<br />
+            <input id="password" type="password" />
+        </p>
+        <input id="loginBtn" type="button" value="Войти" />
+    </div><br />
     <div>
-        Login:<br />
-        <input id="userName" type="text" /><br /><br />
         Message:<br />
         <input type="text" id="message" /><br /><br />
         <input type="button" id="sendBtn" value="Send" disabled="disabled" />
+    </div>
+    <div>
+        Receiver:<br />
+        <input type="text" id="receiver" /><br /><br />
+        Message:<br />
+        <input type="text" id="messageTo" /><br /><br />
+        <input type="button" id="sendToBtn" value="Send" disabled="disabled" />
     </div>
     <div>
         Present:<br />
@@ -20,25 +36,70 @@
     <div id="chatroom"></div>
     <script src="js/microsoft/signalr/dist/browser/signalr.min.js"></script>
     <script>
+        let token;
+        let username;
         const hubConnection = new signalR.HubConnectionBuilder()
-            .withUrl("/chat")
+            .withUrl("/chat", { accessTokenFactory: () => token })
             .build();
 
+        document.getElementById("loginBtn").addEventListener("click", async () => {
+
+            const response = await fetch("/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    email: document.getElementById("email").value,
+                    password: document.getElementById("password").value
+                })
+            });
+
+            if (response.ok === true) {
+                const data = await response.json();
+                token = data.access_token;
+                username = data.username;
+                document.getElementById("loginBtn").disabled = true;
+
+                hubConnection.start()
+                    .then(function () {
+                        document.getElementById("sendBtn").disabled = false;
+                        document.getElementById("sendToBtn").disabled = false;
+                        document.getElementById("sendPresentBtn").disabled = false;
+                    })
+                    .catch(function (err) {
+                        return console.error(err.toString());
+                    });
+            }
+            else {
+                console.log(`Status: ${response.status}`);
+            }
+        });
+
         document.getElementById("sendBtn").addEventListener("click", function () {
-            const userName = document.getElementById("userName").value;
+
             const message = document.getElementById("message").value;
 
-            hubConnection.invoke("Send", message, userName)
+            hubConnection.invoke("Send", message, username)
                 .catch(function (err) {
                     return console.error(err.toString());
                 });
         });
 
         document.getElementById("sendPresentBtn").addEventListener("click", function () {
-            const userName = document.getElementById("userName").value;
+
             const present = document.getElementById("present").value;
 
-            hubConnection.invoke("SendPresent", present, userName)
+            hubConnection.invoke("SendPresent", present, username)
+                .catch(function (err) {
+                    return console.error(err.toString());
+                });
+        });
+
+        document.getElementById("sendToBtn").addEventListener("click", function () {
+
+            const message = document.getElementById("messageTo").value;
+            const receiver = document.getElementById("receiver").value;
+
+            hubConnection.invoke("SendTo", message, receiver)
                 .catch(function (err) {
                     return console.error(err.toString());
                 });
@@ -53,9 +114,21 @@
             document.getElementById("chatroom").insertBefore(elem, firstElem);
         });
 
-        hubConnection.on("Receive", function (message, userName) {
+        hubConnection.on("Receive", function (message, user) {
             const userNameElem = document.createElement("b");
-            userNameElem.textContent = `${userName}: `;
+            userNameElem.textContent = `${user}: `;
+
+            const elem = document.createElement("p");
+            elem.appendChild(userNameElem);
+            elem.appendChild(document.createTextNode(message));
+
+            const firstElem = document.getElementById("chatroom").firstChild;
+            document.getElementById("chatroom").insertBefore(elem, firstElem);
+        });
+
+        hubConnection.on("ReceiveSecret", function (message, user, reciver) {
+            const userNameElem = document.createElement("b");
+            userNameElem.textContent = `${user} (private message with ${reciver}): `;
 
             const elem = document.createElement("p");
             elem.appendChild(userNameElem);
@@ -74,14 +147,7 @@
             document.getElementById("chatroom").insertBefore(elem, firstElem);
         });
 
-        hubConnection.start()
-            .then(function () {
-                document.getElementById("sendBtn").disabled = false;
-                document.getElementById("sendPresentBtn").disabled = false;
-            })
-            .catch(function (err) {
-                return console.error(err.toString());
-            });
+
     </script>
 </body>
 </html>
