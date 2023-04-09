@@ -2,14 +2,14 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.SignalR;
 
-namespace SignalRTestSolution
+namespace SignalRTestSolution.Services
 {
     [Authorize]
     public class ChatHub : Hub
     {
         public async Task Send(string message, string userName)
         {
-            await this.Clients.All.SendAsync("Receive", message, userName);
+            await Clients.All.SendAsync("Receive", message, userName);
         }
 
         public async Task SendTo(string message, string to)
@@ -22,13 +22,13 @@ namespace SignalRTestSolution
 
         public async Task SendPresent(string present, string userName)
         {
-            await this.Clients.Caller.SendAsync("Notify", $"You sent {present} to everyone");
-            await this.Clients.Others.SendAsync("ReceivePresent", $"You get {present} from {userName}");
+            await Clients.Caller.SendAsync("Notify", $"You sent {present} to everyone");
+            await Clients.Others.SendAsync("ReceivePresent", $"You get {present} from {userName}");
         }
 
         public override async Task OnConnectedAsync()
         {
-            
+
             var context = Context.GetHttpContext();
             if (context is not null)
             {

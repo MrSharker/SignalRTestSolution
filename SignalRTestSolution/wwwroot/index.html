@@ -20,26 +20,38 @@
         Message:<br />
         <input type="text" id="message" /><br /><br />
         <input type="button" id="sendBtn" value="Send" disabled="disabled" />
-    </div>
+    </div><br />
     <div>
         Receiver:<br />
         <input type="text" id="receiver" /><br /><br />
         Message:<br />
         <input type="text" id="messageTo" /><br /><br />
         <input type="button" id="sendToBtn" value="Send" disabled="disabled" />
-    </div>
+    </div><br />
     <div>
         Present:<br />
         <input type="text" id="present" /><br /><br />
         <input type="button" id="sendPresentBtn" value="Send" disabled="disabled" />
+    </div><br />
+    <div>
+        Group name:<br />
+        <input type="text" id="groupName" />
+        <input type="button" id="enterGroupBtn" value="Enter" disabled="disabled" /><br /><br />
+        Message:<br />
+        <input type="text" id="messageToGroup" /><br /><br />
+        <input type="button" id="sendToGroupBtn" value="Send to group" disabled="disabled" />
     </div>
     <div id="chatroom"></div>
     <script src="js/microsoft/signalr/dist/browser/signalr.min.js"></script>
     <script>
         let token;
         let username;
-        const hubConnection = new signalR.HubConnectionBuilder()
+        const hubConnectionChat = new signalR.HubConnectionBuilder()
             .withUrl("/chat", { accessTokenFactory: () => token })
+            .build();
+
+        const hubConnectionGroupChat = new signalR.HubConnectionBuilder()
+            .withUrl("/groupchat", { accessTokenFactory: () => token })
             .build();
 
         document.getElementById("loginBtn").addEventListener("click", async () => {
@@ -59,11 +71,19 @@
                 username = data.username;
                 document.getElementById("loginBtn").disabled = true;
 
-                hubConnection.start()
+                hubConnectionChat.start()
                     .then(function () {
                         document.getElementById("sendBtn").disabled = false;
                         document.getElementById("sendToBtn").disabled = false;
                         document.getElementById("sendPresentBtn").disabled = false;
+                    })
+                    .catch(function (err) {
+                        return console.error(err.toString());
+                    });
+                hubConnectionGroupChat.start()
+                    .then(function () {
+                        document.getElementById("enterGroupBtn").disabled = false;
+                        document.getElementById("sendToGroupBtn").disabled = false;
                     })
                     .catch(function (err) {
                         return console.error(err.toString());
@@ -78,7 +98,7 @@
 
             const message = document.getElementById("message").value;
 
-            hubConnection.invoke("Send", message, username)
+            hubConnectionChat.invoke("Send", message, username)
                 .catch(function (err) {
                     return console.error(err.toString());
                 });
@@ -88,7 +108,7 @@
 
             const present = document.getElementById("present").value;
 
-            hubConnection.invoke("SendPresent", present, username)
+            hubConnectionChat.invoke("SendPresent", present, username)
                 .catch(function (err) {
                     return console.error(err.toString());
                 });
@@ -99,13 +119,34 @@
             const message = document.getElementById("messageTo").value;
             const receiver = document.getElementById("receiver").value;
 
-            hubConnection.invoke("SendTo", message, receiver)
+            hubConnectionChat.invoke("SendTo", message, receiver)
                 .catch(function (err) {
                     return console.error(err.toString());
                 });
         });
 
-        hubConnection.on("ReceivePresent", function (message) {
+        document.getElementById("enterGroupBtn").addEventListener("click", function () {
+
+            const group = document.getElementById("groupName").value;
+
+            hubConnectionGroupChat.invoke("Enter", group)
+                .catch(function (err) {
+                    return console.error(err.toString());
+                });
+        });
+
+        document.getElementById("sendToGroupBtn").addEventListener("click", function () {
+
+            const message = document.getElementById("messageToGroup").value;
+            const group = document.getElementById("groupName").value;
+
+            hubConnectionGroupChat.invoke("Send", message, group)
+                .catch(function (err) {
+                    return console.error(err.toString());
+                });
+        });
+
+        hubConnectionChat.on("ReceivePresent", function (message) {
 
             const elem = document.createElement("p");
             elem.appendChild(document.createTextNode(message));
@@ -114,7 +155,7 @@
             document.getElementById("chatroom").insertBefore(elem, firstElem);
         });
 
-        hubConnection.on("Receive", function (message, user) {
+        hubConnectionChat.on("Receive", function (message, user) {
             const userNameElem = document.createElement("b");
             userNameElem.textContent = `${user}: `;
 
@@ -126,7 +167,7 @@
             document.getElementById("chatroom").insertBefore(elem, firstElem);
         });
 
-        hubConnection.on("ReceiveSecret", function (message, user, reciver) {
+        hubConnectionChat.on("ReceiveSecret", function (message, user, reciver) {
             const userNameElem = document.createElement("b");
             userNameElem.textContent = `${user} (private message with ${reciver}): `;
 
@@ -138,7 +179,7 @@
             document.getElementById("chatroom").insertBefore(elem, firstElem);
         });
 
-        hubConnection.on("Notify", function (message) {
+        hubConnectionChat.on("Notify", function (message) {
             const notifyElem = document.createElement("b");
             notifyElem.textContent = message;
             const elem = document.createElement("p");
@@ -147,6 +188,26 @@
             document.getElementById("chatroom").insertBefore(elem, firstElem);
         });
 
+        hubConnectionGroupChat.on("ReceiveGroup", function (message, user, group) {
+            const userNameElem = document.createElement("b");
+            userNameElem.textContent = `${user} (${group}): `;
+
+            const elem = document.createElement("p");
+            elem.appendChild(userNameElem);
+            elem.appendChild(document.createTextNode(message));
+
+            const firstElem = document.getElementById("chatroom").firstChild;
+            document.getElementById("chatroom").insertBefore(elem, firstElem);
+        });
+
+        hubConnectionGroupChat.on("Notify", function (message) {
+            const notifyElem = document.createElement("b");
+            notifyElem.textContent = message;
+            const elem = document.createElement("p");
+            elem.appendChild(notifyElem);
+            const firstElem = document.getElementById("chatroom").firstChild;
+            document.getElementById("chatroom").insertBefore(elem, firstElem);
+        });
 
     </script>
 </body>

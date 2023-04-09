@@ -3,7 +3,7 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Windows;
 
-namespace SignalRWPFClient
+namespace SignalRWPFClient.ViewControllers
 {
     /// <summary>
     /// Interaction logic for MainWindow.xaml
@@ -13,7 +13,6 @@ namespace SignalRWPFClient
         public MainWindow()
         {
             InitializeComponent();
-            
         }
 
         private async void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)

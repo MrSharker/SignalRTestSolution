@@ -8,6 +8,8 @@ using SignalRTestSolution;
 using Microsoft.AspNetCore.Authentication.OAuth;
 using System;
 using Microsoft.AspNetCore.SignalR;
+using SignalRTestSolution.Models;
+using SignalRTestSolution.Services;
 
 var users = new List<User>
  {
@@ -99,6 +101,14 @@ app.MapGet("/test", () =>
 });
 
 app.MapHub<ChatHub>("/chat",
+    options => {
+        options.ApplicationMaxBufferSize = 128;
+        options.TransportMaxBufferSize = 128;
+        options.LongPolling.PollTimeout = TimeSpan.FromMinutes(3);
+        options.Transports = HttpTransportType.LongPolling | HttpTransportType.WebSockets;
+    });
+
+app.MapHub<GroupChatHub>("/groupchat",
     options => {
         options.ApplicationMaxBufferSize = 128;
         options.TransportMaxBufferSize = 128;

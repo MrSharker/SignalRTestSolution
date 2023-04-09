@@ -14,7 +14,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-namespace SignalRWPFClient
+namespace SignalRWPFClient.ViewControllers.Pages
 {
     /// <summary>
     /// Логика взаимодействия для Login.xaml

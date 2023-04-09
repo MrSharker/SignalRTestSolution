@@ -14,7 +14,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-namespace SignalRWPFClient
+namespace SignalRWPFClient.ViewControllers.Pages
 {
     /// <summary>
     /// Логика взаимодействия для Messanger.xaml
@@ -63,7 +63,37 @@ namespace SignalRWPFClient
             }
         }
 
+        private async void SendToGroup_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                await Globals.ConnectionGroup.InvokeAsync("Send", groupMessageTextBox.Text, groupNameTextBox.Text);
+            }
+            catch (Exception ex)
+            {
+                chatbox.Items.Add(ex.Message);
+            }
+        }
+
+        private async void EnterToGroup_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                await Globals.ConnectionGroup.InvokeAsync("Enter",groupNameTextBox.Text);
+            }
+            catch (Exception ex)
+            {
+                chatbox.Items.Add(ex.Message);
+            }
+        }
+
         private void RegisterAllHandlers()
+        {
+            RegisterChatHandlers();
+            RegisterGroupChatHandlers();
+        }
+
+        private void RegisterChatHandlers()
         {
             Globals.Connection.On<string>("ReceivePresent", (message) =>
             {
@@ -93,6 +123,27 @@ namespace SignalRWPFClient
             });
 
             Globals.Connection.On<string>("Notify", (message) =>
+            {
+                Dispatcher.Invoke(() =>
+                {
+                    var newMessage = $"{message}";
+                    chatbox.Items.Insert(0, newMessage);
+                });
+            });
+        }
+        
+        private void RegisterGroupChatHandlers()
+        {
+            Globals.ConnectionGroup.On<string, string, string>("ReceiveGroup", (message, user, group) =>
+            {
+                Dispatcher.Invoke(() =>
+                {
+                    var newMessage = $"{user}({group}): {message}";
+                    chatbox.Items.Insert(0, newMessage);
+                });
+            });
+
+            Globals.ConnectionGroup.On<string>("Notify", (message) =>
             {
                 Dispatcher.Invoke(() =>
                 {
