@@ -28,20 +28,10 @@ namespace SignalRTestSolution.Services
 
         public override async Task OnConnectedAsync()
         {
-
             var context = Context.GetHttpContext();
             if (context is not null)
             {
-                if (context.Request.Cookies.ContainsKey("name"))
-                {
-                    if (context.Request.Cookies.TryGetValue("name", out var userName))
-                    {
-                        Console.WriteLine($"name = {userName}");
-                    }
-                }
                 await Clients.All.SendAsync("Notify", $"{Context.UserIdentifier} entered into the chat");
-                Console.WriteLine($"UserAgent = {context.Request.Headers["User-Agent"]}");
-                Console.WriteLine($"RemoteIpAddress = {context.Connection?.RemoteIpAddress?.ToString()}");
 
                 await base.OnConnectedAsync();
             }

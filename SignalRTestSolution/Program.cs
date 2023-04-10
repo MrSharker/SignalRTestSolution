@@ -61,6 +61,7 @@ builder.Services
     .AddHubOptions<ChatHub>(options =>
     {
         options.EnableDetailedErrors = false;
+        options.AddFilter(new HubFilter());
     });
 
 var app = builder.Build();
